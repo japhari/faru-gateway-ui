@@ -1,0 +1,21 @@
+FROM node:20.14.0-alpine AS node20
+
+WORKDIR /app
+
+COPY . .
+
+RUN npm install -f
+
+RUN npm run clean
+
+RUN npm run prepare
+
+FROM nginx:1.27.0-alpine
+
+WORKDIR /usr/share/nginx/html
+
+RUN rm -rf ./*
+
+COPY --from=node20 /app/dist /usr/share/nginx/html
+
+COPY config/faru-console.nginx.conf /etc/nginx/conf.d/default.conf

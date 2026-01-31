@@ -1,0 +1,60 @@
+.dockerignore
+.editorconfig
+.gitattributes
+
+# Git
+.git
+.gitignore
+.github
+
+# CI/CD
+.travis
+.travis.yml
+
+# IDE
+.vscode
+.idea
+
+# Dependencies
+node_modules
+npm-debug.log
+yarn-error.log
+
+# Build outputs
+lib/*
+!lib/.gitkeep
+
+# Test files
+test
+.nyc_output
+coverage
+.env.test
+
+# Documentation
+*.md
+!README.md
+
+# Development files
+.eslintrc.json
+.eslintignore
+.npmignore
+.nycrc.json
+.prettierrc.yaml
+
+# Infrastructure
+infrastructure
+packaging
+performance
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Logs
+logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db

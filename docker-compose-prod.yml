@@ -1,0 +1,14 @@
+
+services:
+  faru_gateway_uat:
+    container_name: faru_gateway_uat
+    restart: always
+    build:
+      context: .
+      dockerfile: ./Dockerfile-prod
+    ports:
+      - '1020:80'
+    network_mode: bridge
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+

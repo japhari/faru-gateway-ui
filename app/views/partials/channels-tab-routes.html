@@ -1,0 +1,506 @@
+<!-- Route Alerts -->
+<div uib-alert ng-if="!routeAddEdit" ng-repeat="alert in alerts.route" ng-class="'alert-' + (alert.type || 'warning')">
+  {{alert.msg}}
+</div>
+<!-- Route Alerts -->
+
+<p class="text-muted">
+  Add routes to this channel. Any requests that match this channel will be forwarded to each route in the channel. One
+  route can be marked as a primary route. The response from the primary route will be the one that is returned to the
+  request sender.
+</p>
+
+<div ng-if="routeAddEdit" class="addEditRoutes">
+  <h3>Set Route</h3>
+
+  <div class="form-group-2columns">
+    <div class="form-group" style="float: left;" ng-class="{ 'has-error' : ngErrorRoute.name }">
+      <label><span style="color: #a94442;">*</span> Route Name</label>
+      <input ng-model="newRoute.name" class="form-control" placeholder="Descriptive Route Name" type="text"/>
+      <div class="has-error-msg"><i class="glyphicon glyphicon-warning-sign"></i>{{validationRequiredMsg}}</div>
+    </div>
+    <div class="form-group" style="float: left; margin-left: 20px;">
+      <div style="float: left;">
+        <label>Primary Route</label><br/>
+        <div class="btn-group" style="clear: both;">
+          <label class="btn btn-primary" ng-model="newRoute.primary" uib-btn-radio="true">Yes</label>
+          <label class="btn btn-primary" ng-model="newRoute.primary" uib-btn-radio="false">No</label>
+        </div>
+      </div>
+      <div style="float: left; margin-left: 20px;">
+        <label>Status</label><br/>
+        <div class="btn-group" style="clear: both;">
+          <label class="btn btn-primary" ng-model="newRoute.status" uib-btn-radio="'enabled'">Enabled</label>
+          <label ng-click="onRouteDisable(newRoute)" class="btn btn-primary" ng-model="newRoute.status"
+                 uib-btn-radio="'disabled'">Disabled</label>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="form-group" style="display: inline-block; width: 100%">
+    <div class="form-group" style="float: left;">
+      <label>Route Type</label><br/>
+      <div class="btn-group" style="clear: both;">
+        <label class="btn btn-primary" ng-model="newRoute.type" uib-btn-radio="'http'">HTTP</label>
+        <label class="btn btn-primary" ng-model="newRoute.type" uib-btn-radio="'kafka'">KAFKA</label>
+        <label class="btn btn-primary" ng-model="newRoute.type" uib-btn-radio="'rabbitmq'">RABBITMQ</label>
+        <label class="btn btn-primary" ng-model="newRoute.type" uib-btn-radio="'govesb'">GOVESB V2</label>
+      </div>
+    </div>
+    <div class="form-group" style="float: left; margin-left: 20px;"
+         ng-if="newRoute.type=='http' || newRoute.type=='govesb'">
+      <label>Route Secured</label><br/>
+      <div class="btn-group" style="clear: both;">
+        <label class="btn btn-primary" ng-model="newRoute.secured" uib-btn-radio="true">Yes</label>
+        <label class="btn btn-primary" ng-model="newRoute.secured" uib-btn-radio="false">No</label>
+      </div>
+    </div>
+    <div class="form-group" style="float: left; margin-left: 20px;" ng-if="newRoute.secured==true">
+      <label>Host certificate authority</label><br/>
+      <select class="form-control" style="width: auto;" ng-model="newRoute.cert"
+              ng-options="cert._id as cert.commonName for cert in trustedCerts">
+        <option value="">Use default CAs</option>
+      </select>
+    </div>
+  </div>
+  <div ng-show="newRoute.primary==false" class="form-group-2columns" style="display: inline-block; width: 100%">
+    <div class="form-group" style="float: left;">
+      <label>Wait for the response of the primary route</label><br/>
+      <div class="btn-group" style="clear: both;">
+        <label class="btn btn-primary" ng-model="newRoute.waitPrimaryResponse" uib-btn-radio="true">Yes</label>
+        <label class="btn btn-primary" ng-model="newRoute.waitPrimaryResponse" uib-btn-radio="false">No</label>
+      </div>
+    </div>
+    <div class="form-group" style="float: left; margin-left: 20px;" ng-show="newRoute.waitPrimaryResponse==true"
+         ng-class="{ 'has-error' : ngErrorRoute.statusCodesCheck }">
+      <label>
+        Send request when matching status code
+        <i ng-show="uiSettings.showTooltips"
+           uib-tooltip="Request will NOT be sent to the secondary route(s) unless the response status of the primary route match one of these status codes. A single value or a list are both accepted. A list should be comma separated (single status codes e.g. 200,201, range e.g. 2**,3**,  mixture of both e.g. 204,3**)."
+           class="glyphicon glyphicon-question-sign tooltip-wide" style="font-size: 12px"></i>
+      </label><br/>
+      <input class="form-control" placeholder="e.g. 2**,404,500" type="text" ng-model="newRoute.statusCodesCheck"/>
+      <div class="has-error-msg"><i class="glyphicon glyphicon-warning-sign"></i>{{ngErrorRoute.statusCodesCheckError}}
+      </div>
+    </div>
+  </div>
+  <div ng-show="newRoute.type=='http'">
+    <div class="form-group-2columns">
+      <div class="form-group" style="float: left;" ng-class="{ 'has-error' : ngErrorRoute.host }">
+        <label><span style="color: #a94442;">*</span> Host</label>
+        <input ng-model="newRoute.host" class="form-control" placeholder="Route Host" type="text"/>
+        <div class="has-error-msg"><i class="glyphicon glyphicon-warning-sign"></i>{{validationRequiredMsg}}</div>
+      </div>
+      <div class="form-group" style="float: left; margin-left: 20px;" ng-class="{ 'has-error' : ngErrorRoute.port }">
+        <label><span style="color: #a94442;">*</span> Port</label><br/>
+        <input ng-model="newRoute.port" class="form-control" placeholder="Route Port" type="text"/>
+        <div class="has-error-msg"><i class="glyphicon glyphicon-warning-sign"></i>{{ngErrorRoute.portError}}</div>
+      </div>
+    </div>
+    <div class="form-group-2columns" ng-class="{ 'has-error' : ngErrorRoute.pathTransform }">
+      <div class="form-group" style="float: left;">
+        <label><span style="color: #a94442;">**</span> Route Path</label>
+        <input ng-model="newRoute.path" class="form-control" placeholder="Route Path" type="text"/>
+      </div>
+      <div class="form-group" style="float: left; margin-left: 20px;">
+        <label>
+          <span style="color: #a94442;">**</span> Route Path Transform
+          <i ng-show="uiSettings.showTooltips"
+             uib-tooltip-html="'Transform the route path by using the following substitute expression format:<br /> s/from/to/g'"
+             class="glyphicon glyphicon-question-sign tooltip-wide"></i>
+        </label><br/>
+        <input ng-model="newRoute.pathTransform" class="form-control" placeholder="s/from/to/g " type="text"/>
+      </div>
+      <div class="has-error-msg" style="clear: both; margin-bottom: 5px;"><i
+        class="glyphicon glyphicon-warning-sign"></i>{{ngErrorRoute.pathTransformError}}
+      </div>
+    </div>
+    <div class="form-group-2columns">
+      <div class="form-group" style="float: left;">
+        <label>Basic Authentication Username</label>
+        <input ng-model="newRoute.username" ng-disabled="newRoute.forwardAuthHeader" class="form-control"
+               placeholder="Basic Authentication Username" type="text"/>
+      </div>
+      <div class="form-group" style="float: left; margin-left: 20px;">
+        <label>Basic Authentication Password</label><br/>
+        <input ng-model="newRoute.password" ng-disabled="newRoute.forwardAuthHeader" class="form-control"
+               placeholder="Basic Authentication Password" type="text"/>
+      </div>
+      <div class="form-group" style="float: left;">
+        <label>Forward existing Authorization header</label><br/>
+        <div class="btn-group" style="clear: both;">
+          <label class="btn btn-primary" ng-model="newRoute.forwardAuthHeader" uib-btn-radio="true">Yes</label>
+          <label class="btn btn-primary" ng-model="newRoute.forwardAuthHeader" uib-btn-radio="false">No</label>
+        </div>
+      </div>
+    </div>
+    <!--    Custom header 1-->
+    <div class="form-group-2columns">
+      <div class="form-group" style="float: left;">
+        <label>Custom Header Key 1</label>
+        <input ng-model="newRoute.customHeaderKey1" class="form-control"
+               placeholder="Custom Header Key 1" type="text"/>
+      </div>
+      <div class="form-group" style="float: left; margin-left: 20px;">
+        <label>Custom Header Value 1</label><br/>
+        <input ng-model="newRoute.customHeaderValue1" class="form-control"
+               placeholder="Custom Header Value 1" type="text"/>
+      </div>
+    </div>
+    <!--    Custom Header 2-->
+    <div class="form-group-2columns">
+      <div class="form-group" style="float: left;">
+        <label>Custom Header Key 2</label>
+        <input ng-model="newRoute.customHeaderKey2" class="form-control"
+               placeholder="Custom Header Key 2" type="text"/>
+      </div>
+      <div class="form-group" style="float: left; margin-left: 20px;">
+        <label>Custom Header Value 2</label><br/>
+        <input ng-model="newRoute.customHeaderValue2" class="form-control"
+               placeholder="Custom Header Value 2" type="text"/>
+      </div>
+    </div>
+    <!--    Custom Header 3-->
+    <div class="form-group-2columns">
+      <div class="form-group" style="float: left;">
+        <label>Custom Header Key 3</label>
+        <input ng-model="newRoute.customHeaderKey3" class="form-control"
+               placeholder="Custom Header Key 3" type="text"/>
+      </div>
+      <div class="form-group" style="float: left; margin-left: 20px;">
+        <label>Custom Header Value 3</label><br/>
+        <input ng-model="newRoute.customHeaderValue3" class="form-control"
+               placeholder="Custom Header Value 3" type="text"/>
+      </div>
+    </div>
+  </div>
+  <div ng-show="newRoute.type=='kafka'">
+    <div class="form-group" ng-class="{ 'has-error' : ngErrorRoute.kafkaClientId }">
+      <label><span>*</span> Client ID</label>
+      <input class="form-control" placeholder="e.g. openhim-route" type="text" ng-model="newRoute.kafkaClientId"/>
+      <div class="has-error-msg"><i class="glyphicon glyphicon-warning-sign"></i>{{validationRequiredMsg}}</div>
+    </div>
+    <div class="form-group" ng-class="{ 'has-error' : ngErrorRoute.kafkaTopic }">
+      <label><span>*</span> Topic Name</label>
+      <input class="form-control" placeholder="e.g. 2xx-topic" type="text" ng-model="newRoute.kafkaTopic"/>
+      <div class="has-error-msg"><i class="glyphicon glyphicon-warning-sign"></i>{{ngErrorRoute.kafkaTopicError}}</div>
+    </div>
+  </div>
+
+  <div ng-show="newRoute.type=='rabbitmq'">
+    <div class="form-group" ng-class="{ 'has-error' : ngErrorRoute.rabbitmqHost }">
+      <label><span style="color: #a94442;">*</span> RabbitMQ Host</label>
+      <input ng-model="newRoute.rabbitmqHost" class="form-control" placeholder="RabbitMQ Host" type="text"/>
+      <div class="has-error-msg"><i class="glyphicon glyphicon-warning-sign"></i>{{validationRequiredMsg}}</div>
+    </div>
+    <div class="form-group" ng-class="{ 'has-error' : ngErrorRoute.rabbitmqPort }">
+      <label><span>*</span> RabbitMQ Port</label>
+      <input ng-model="newRoute.rabbitmqPort" class="form-control" placeholder="RabbitMQ Port" type="text"/>
+      <div class="has-error-msg"><i class="glyphicon glyphicon-warning-sign"></i>{{validationRequiredMsg}}</div>
+    </div>
+    <div class="form-group" ng-class="{ 'has-error' : ngErrorRoute.rabbitmqUsername }">
+      <label><span>*</span> RabbitMQ Username</label>
+      <input class="form-control" placeholder="RabbitMQ Username" type="text" ng-model="newRoute.rabbitmqUsername"/>
+      <div class="has-error-msg"><i class="glyphicon glyphicon-warning-sign"></i>{{validationRequiredMsg}}</div>
+    </div>
+    <div class="form-group" ng-class="{ 'has-error' : ngErrorRoute.rabbitmqPassword }">
+      <label><span>*</span> RabbitMQ Password</label>
+      <input class="form-control" placeholder="RabbitMQ Password" type="password" ng-model="newRoute.rabbitmqPassword"/>
+      <div class="has-error-msg"><i class="glyphicon glyphicon-warning-sign"></i>{{validationRequiredMsg}}</div>
+    </div>
+
+    <div class="form-group-2columns">
+      <div class="form-group" style="float: left;">
+        <label><span>*</span> RabbitMQ Usage Channel</label><br/>
+        <div class="btn-group" style="clear: both;">
+          <label class="btn btn-primary" ng-model="newRoute.rabbitmqExchange" uib-btn-radio="true">RabbitMQ
+            Exchange</label>
+          <label class="btn btn-primary" ng-model="newRoute.rabbitmqExchange" uib-btn-radio="false">RabbitMQ
+            Queue</label>
+        </div>
+      </div>
+    </div>
+
+    <div ng-show="newRoute.rabbitmqExchange">
+      <hr/>
+      <h5 style="font-style: italic">RabbitMQ Exchange Metadata</h5>
+      <div class="form-group mb-3" ng-class="{ 'has-error' : ngErrorRoute.rabbitmqExchangeName }">
+        <label><span>*</span> RabbitMQ Exchange Name</label>
+        <input class="form-control" placeholder="e.g. example-exchange" type="text"
+               ng-model="newRoute.rabbitmqExchangeName"/>
+        <div class="has-error-msg"><i
+          class="glyphicon glyphicon-warning-sign"></i>{{ngErrorRoute.rabbitmqExchangeNameError ?
+          ngErrorRoute.rabbitmqExchangeNameError : validationRequiredMsg }}
+        </div>
+      </div>
+      <div class="form-group mb-3" ng-class="{ 'has-error' : ngErrorRoute.rabbitMQExchangeRoutingKey }">
+        <label><span>*</span> RabbitMQ Exchange Routing Key</label>
+        <input class="form-control" placeholder="e.g. example-exchange-routing-key" type="text"
+               ng-model="newRoute.rabbitMQExchangeRoutingKey"/>
+        <div class="has-error-msg"><i
+          class="glyphicon glyphicon-warning-sign"></i>{{ngErrorRoute.rabbitmqExchangeNameError ?
+          ngErrorRoute.rabbitmqExchangeNameError : validationRequiredMsg }}
+        </div>
+      </div>
+    </div>
+
+    <div ng-show="!newRoute.rabbitmqExchange">
+      <hr/>
+      <h5 style="font-style: italic">RabbitMQ Queue Metadata</h5>
+      <div class="form-group mb-3" ng-class="{ 'has-error' : ngErrorRoute.rabbitmqQueueName }">
+        <label><span>*</span> RabbitMQ Queue Name</label>
+        <input class="form-control" placeholder="e.g. example-queue" type="text"
+               ng-model="newRoute.rabbitmqQueueName"/>
+        <div class="has-error-msg"><i
+          class="glyphicon glyphicon-warning-sign"></i>{{ngErrorRoute.rabbitmqQueueNameError ?
+          ngErrorRoute.rabbitmqQueueNameError : validationRequiredMsg }}
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div ng-show="newRoute.type=='govesb'">
+    <hr/>
+    <h5 style="font-style: italic">GovESB Metadata</h5>
+    <div class="form-group">
+      <label>GovESB Push Code/API Code</label><br/>
+      <input ng-model="newRoute.govesbApiCode" class="form-control" placeholder="Enter Push Code or API Code" type="text"/>
+    </div>
+    <div class="form-group-3columns">
+      <div class="form-group" style="float: left;">
+        <label>Request Type</label><br/>
+        <div class="btn-group" style="clear: both;">
+          <label class="btn btn-primary" ng-model="newRoute.govesbIsPushRequest" uib-btn-radio="true">PUSH</label>
+          <label class="btn btn-primary" ng-model="newRoute.govesbIsPushRequest" uib-btn-radio="false">PULL</label>
+        </div>
+      </div>
+      <div class="form-group" style="float: left;">
+        <label>Has Destination System</label><br/>
+        <div class="btn-group" style="clear: both;">
+          <label class="btn btn-primary" ng-model="newRoute.hasDestinationSystem" uib-btn-radio="true">Yes</label>
+          <label class="btn btn-primary" ng-model="newRoute.hasDestinationSystem" uib-btn-radio="false">No</label>
+        </div>
+      </div>
+      <div class="form-group" style="float: left;">
+        <label>API Type</label><br/>
+        <div class="btn-group" style="clear: both;">
+          <label class="btn btn-primary" ng-model="newRoute.apiTypeSending" uib-btn-radio="true">Sending Data</label>
+          <label class="btn btn-primary" ng-model="newRoute.apiTypeSending" uib-btn-radio="false">Receiving Data</label>
+        </div>
+      </div>
+    </div>
+    <div class="form-group-2columns">
+      <div class="form-group" style="float: left;">
+        <label>Encryption Key</label>
+        <select class="form-control" ng-model="newRoute.encryptionKeyId">
+          <option value="">Select Encryption Key (Optional)</option>
+          <option ng-repeat="key in encryptionKeys" value="{{key._id}}">{{key.name}}</option>
+        </select>
+        <small class="help-block">Select an encryption key to use for encrypting/decrypting data</small>
+      </div>
+    </div>
+
+
+    <div ng-show="newRoute.hasDestinationSystem">
+      <hr/>
+      <h5 style="font-style: italic">Destination System Metadata</h5>
+      <div class="form-group-2columns">
+        <div class="form-group" style="float: left;" ng-class="{ 'has-error' : ngErrorRoute.destinationHost }">
+          <label><span style="color: #a94442;">*</span> Destination Host</label>
+          <input ng-model="newRoute.destinationHost" ng-required="hasDestinationSystem" class="form-control"
+                 placeholder="Destination Route Host" type="text"/>
+          <div class="has-error-msg"><i class="glyphicon glyphicon-warning-sign"></i>{{validationRequiredMsg}}</div>
+        </div>
+        <div class="form-group" style="float: left; margin-left: 20px;"
+             ng-class="{ 'has-error' : ngErrorRoute.destinationPort }">
+          <label><span style="color: #a94442;">*</span> Destination Port</label><br/>
+          <input ng-model="newRoute.destinationPort" ng-required="hasDestinationSystem" class="form-control"
+                 placeholder="Destination Route Port" type="text"/>
+          <div class="has-error-msg"><i class="glyphicon glyphicon-warning-sign"></i>{{ngErrorRoute.portError}}</div>
+        </div>
+      </div>
+      <div class="form-group-2columns">
+        <div class="form-group" style="float: left;" ng-class="{ 'has-error' : ngErrorRoute.destinationHost }">
+          <label><span style="color: #a94442;">**</span> Destination Route Path</label>
+          <input ng-model="newRoute.destinationPath" ng-required="hasDestinationSystem" class="form-control"
+                 placeholder="Destination Route Path" type="text"/>
+          <div class="has-error-msg"><i class="glyphicon glyphicon-warning-sign"></i>{{validationRequiredMsg}}</div>
+        </div>
+        <div class="form-group" style="float: right;">
+          <label>Is Destination Secured?</label><br/>
+          <div class="btn-group" style="clear: both;">
+            <label class="btn btn-primary" ng-model="newRoute.destinationSecured" uib-btn-radio="true">Yes</label>
+            <label class="btn btn-primary" ng-model="newRoute.destinationSecured" uib-btn-radio="false">No</label>
+          </div>
+        </div>
+      </div>
+      <div class="form-group-2columns">
+        <div class="form-group" style="float: left;">
+          <label>Destination Basic Authentication Username</label>
+          <input ng-model="newRoute.destinationUsername" class="form-control"
+                 placeholder="Destination Basic Authentication Username" type="text"/>
+        </div>
+        <div class="form-group" style="float: left; margin-left: 20px;">
+          <label>Destination Basic Authentication Password</label><br/>
+          <input ng-model="newRoute.destinationPassword" class="form-control"
+                 placeholder="Destination Basic Authentication Password" type="text"/>
+        </div>
+      </div>
+      <!--    Custom header 1-->
+      <div class="form-group-2columns">
+        <div class="form-group" style="float: left;">
+          <label>Destination Custom Header Key 1</label>
+          <input ng-model="newRoute.destinationCustomHeaderKey1" class="form-control"
+                 placeholder="Destination Custom Header Key 1" type="text"/>
+        </div>
+        <div class="form-group" style="float: left; margin-left: 20px;">
+          <label>Destination Custom Header Value 1</label><br/>
+          <input ng-model="newRoute.destinationCustomHeaderValue1" class="form-control"
+                 placeholder="Destination Custom Header Value 1" type="text"/>
+        </div>
+      </div>
+      <!--    Custom Header 2-->
+      <div class="form-group-2columns">
+        <div class="form-group" style="float: left;">
+          <label>Destination Custom Header Key 2</label>
+          <input ng-model="newRoute.destinationCustomHeaderKey2" class="form-control"
+                 placeholder="Destination Custom Header Key 2" type="text"/>
+        </div>
+        <div class="form-group" style="float: left; margin-left: 20px;">
+          <label>Destination Custom Header Value 2</label><br/>
+          <input ng-model="newRoute.destinationCustomHeaderValue2" class="form-control"
+                 placeholder="Destination Custom Header Value 2" type="text"/>
+        </div>
+      </div>
+      <!--    Custom Header 3-->
+      <div class="form-group-2columns">
+        <div class="form-group" style="float: left;">
+          <label>Destination Custom Header Key 3</label>
+          <input ng-model="newRoute.destinationCustomHeaderKey3" class="form-control"
+                 placeholder="Destination Custom Header Key 3" type="text"/>
+        </div>
+        <div class="form-group" style="float: left; margin-left: 20px;">
+          <label>Destination Custom Header Value 3</label><br/>
+          <input ng-model="newRoute.destinationCustomHeaderValue3" class="form-control"
+                 placeholder="Destination Custom Header Value 3" type="text"/>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top: 10px;">
+    <button type="button" class="btn btn-default" ng-click="cancelRouteAddEdit()">Cancel</button>
+    <button type="button" class="btn btn-primary" ng-click="saveRoute( oldRouteIndex )" style="margin-left: 5px;">Set
+      Route
+    </button>
+
+    <!-- hasErrors Alerts -->
+    <div uib-alert style="display: inline-block; margin: 0px 0px 0px 5px; padding: 8px;"
+         ng-repeat="alert in alerts.hasErrorsRoute" ng-class="'alert-' + (alert.type || 'warning')">
+      <i class="glyphicon glyphicon-warning-sign"></i>{{alert.msg}}
+    </div>
+    <!-- hasErrors Alerts -->
+  </div>
+</div>
+
+
+<div ng-if="!routeAddEdit">
+  <table class="table table-striped" ng-if="channel.routes.length > 0">
+    <thead>
+    <tr style="font-weight: bold">
+      <th>
+        <div style="width: 23%; float: left; display: block; margin-right: 1%;">Name | Status | Primary</div>
+        <div style="width: 18%; float: left; display: block; margin-right: 1%;">Type | Secured | Conditional</div>
+        <div style="width: 23%; float: left; display: block; margin-right: 1%;">Host | Port | Topic</div>
+        <div style="width: 23%; float: left; display: block; margin-right: 1%;">Path/Transform</div>
+        <div style="width: 8%; float: right; display: block;"></div>
+      </th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr ng-repeat="route in channel.routes">
+
+      <td colspan="6">
+        <div style="width: 23%; float: left; display: block; margin-right: 1%;">
+          <span>{{ route.name }}</span>
+          <label ng-if="route.status == 'enabled'" uib-tooltip="Enabled">
+            <i class="glyphicon glyphicon-ok-circle" style="color: #3c763d;"></i>
+          </label>
+          <label ng-if="route.status == 'disabled'" uib-tooltip="Disabled">
+            <i class="glyphicon glyphicon-remove-circle" style="color: #f0ad4e;"></i>
+          </label>
+          <label ng-if="route.primary"
+                 uib-tooltip="The primary route is the route from which the http response will be read and returned to the client."
+                 class="tooltip-wide">
+            <i class="glyphicon glyphicon-star" style="color: #428bca"></i>
+          </label>
+        </div>
+        <div style="width: 18%; float: left; display: block; margin-right: 1%;">
+          <span ng-if="route.type=='http'" class="btn-info btn-xs">HTTP</span>
+          <span ng-if="route.type=='kafka'" class="btn-warning btn-xs">KAFKA</span>
+          <span ng-if="route.type=='rabbitmq'" class="btn-info btn-xs">RABBITMQ</span>
+          <span ng-if="route.type=='govesb'" class="btn-primary btn-xs">GovESB</span>
+
+          <span ng-if="route.secured==true && (route.type=='http' || route.type=='govesb')" class="btn-success btn-xs">Secured</span>
+          <span ng-if="route.secured==false && (route.type=='http' || route.type=='govesb')" class="btn-danger btn-xs">Unsecured</span>
+
+          <span ng-if="route.waitPrimaryResponse==true" class="btn-warning btn-xs">Conditional</span>
+        </div>
+        <div style="width: 23%; float: left; display: block; margin-right: 1%;">
+            <span ng-show="route.type=='http'">
+              <span>{{ route.host }}</span>
+              <span>{{ route.port }}</span>
+            </span>
+          <span ng-show="route.type=='kafka'">
+              <span>{{ route.kafkaTopic }}</span>
+            </span>
+          <span ng-show="route.type=='rabbitmq'">
+            <span ng-show="route.rabbitmqExchange">
+              <span>{{ route.rabbitmqHost }}</span>
+              <span>{{ route.rabbitmqPort }}</span>
+              <span>{{ route.rabbitmqExchangeName }}</span>
+              <span>{{ route.rabbitMQExchangeRoutingKey }}</span>
+            </span>
+            </span>
+          <span ng-show="!route.rabbitmqExchange">
+              <span>{{ route.rabbitmqHost }}</span>
+              <span>{{ route.rabbitmqPort }}</span>
+              <span>{{ route.rabbitmqQueueName }}</span>
+            </span>
+          </span>
+
+          <span ng-show="route.type=='govesb'">
+              <span>GovESB</span>
+            </span>
+        </div>
+        <div style="width: 23%; float: left; display: block; margin-right: 1%;">
+            <span ng-show="route.type=='http'">
+              <span>{{ route.path }}</span>
+              <span>{{ route.pathTransform }}</span>
+            </span>
+          <span ng-show="route.type=='govesb'">
+              <span>{{ route.govesbIsPushRequest ? 'PUSH' : 'PULL' }}</span>
+              <span>{{ route.govesbApiCode }}</span>
+            </span>
+        </div>
+        <div style="width: 8%; float: right; display: block;">
+          <button class="btn btn-warning btn-xs" ng-click="addEditRoute('edit', route, $index)"><i
+            class="glyphicon glyphicon-pencil"></i></button>
+          <button class="btn btn-danger btn-xs" ng-click="removeRoute($index)"><i
+            class="glyphicon glyphicon-remove"></i></button>
+        </div>
+      </td>
+
+    </tr>
+    </tbody>
+  </table>
+
+  <button style="float: left; margin-right: 20px;" class="btn btn-primary" ng-click="addEditRoute('new', null, null)">
+    Add New Route
+  </button>
+  <select style="float: left; width: auto;" class="form-control" ng-model="selected.mediatorRoute"
+          ng-change="addRouteFromMediator()" ng-options="medRoute as medRoute.fullName for medRoute in mediatorRoutes">
+    <option value="">Add Mediator Route</option>
+  </select>
+</div>

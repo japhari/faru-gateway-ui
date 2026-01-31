@@ -1,0 +1,251 @@
+<div class="modal-header">
+  <button type="button" class="close" ng-click="cancel()" aria-hidden="true">
+    &times;
+  </button>
+  <h4 class="modal-title" id="addEncryptionKeyLabel">
+    <i class="glyphicon glyphicon-qrcode"></i>&nbsp;&nbsp;
+    <span ng-show="update">Edit</span>
+    <span ng-show="!update">Add</span>
+    an Encryption Key
+  </h4>
+</div>
+
+<form name="form" novalidate>
+  <div class="modal-body">
+    <div class="form-group has-error-key">
+      <span>*</span> Indicates a required field<br />
+    </div>
+
+    <fieldset>
+      <div class="form-group" ng-class="{ 'has-error' : ngError.name }">
+        <label><span>*</span> Key Name</label>
+        <input
+          class="form-control"
+          type="text"
+          ng-model="encryptionKey.name"
+          focus="{{!update}}"
+          placeholder="Enter a unique name for this encryption key"
+        />
+        <div class="has-error-msg">
+          <i class="glyphicon glyphicon-warning-sign"></i
+          >{{validationRequiredMsg}}
+        </div>
+      </div>
+
+      <div class="form-group" ng-show="!update">
+        <label>Generate Keys</label>
+        <div class="well well-sm" style="margin-bottom: 10px">
+          <div class="form-group" style="margin-bottom: 10px">
+            <label>Elliptic Curve Algorithm</label>
+            <select
+              class="form-control"
+              ng-model="temp.curve"
+              ng-options="curve.value as curve.label for curve in availableCurves"
+            ></select>
+            <small class="help-block"
+              >Select the elliptic curve algorithm for key generation (default:
+              P-256/prime256v1)</small
+            >
+          </div>
+          <div class="form-group" style="margin-bottom: 10px">
+            <label>
+              <input type="checkbox" ng-model="temp.generateGovEsbKey" />
+              Generate separate GovESB public key
+            </label>
+            <small class="help-block"
+              >If unchecked, the same public key will be used for both client
+              and GovESB (you can replace GovESB key later)</small
+            >
+          </div>
+          <button
+            type="button"
+            class="btn btn-success btn-sm"
+            ng-click="generateKeys()"
+            ng-disabled="generatingKeys"
+          >
+            <i
+              class="glyphicon glyphicon-refresh"
+              ng-class="{'glyphicon-refresh-animate': generatingKeys}"
+            ></i>
+            <span ng-if="!generatingKeys">Generate New Key Pair</span>
+            <span ng-if="generatingKeys">Generating...</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="form-group" ng-class="{ 'has-error' : ngError.privateKey }">
+        <label><span>*</span> Private Key</label>
+        <textarea
+          class="form-control"
+          rows="4"
+          ng-model="encryptionKey.privateKey"
+          placeholder="Enter the private key (base64 DER format) or generate using the button above"
+        ></textarea>
+        <div class="has-error-msg">
+          <i class="glyphicon glyphicon-warning-sign"></i
+          >{{validationRequiredMsg}}
+        </div>
+      </div>
+
+      <div class="form-group" ng-class="{ 'has-error' : ngError.publicKey }">
+        <label><span>*</span> Public Key</label>
+        <textarea
+          class="form-control"
+          rows="4"
+          ng-model="encryptionKey.publicKey"
+          placeholder="Enter the public key (base64 DER format) or generate using the button above"
+        ></textarea>
+        <div class="has-error-msg">
+          <i class="glyphicon glyphicon-warning-sign"></i
+          >{{validationRequiredMsg}}
+        </div>
+      </div>
+
+      <div
+        class="form-group"
+        ng-class="{ 'has-error' : ngError.govesbPublicKey }"
+      >
+        <label><span>*</span> GOVESB Public Key</label>
+        <textarea
+          class="form-control"
+          rows="4"
+          ng-model="encryptionKey.govesbPublicKey"
+          placeholder="Enter the GOVESB public key (base64 DER format) or generate using the button above"
+        ></textarea>
+        <div class="has-error-msg">
+          <i class="glyphicon glyphicon-warning-sign"></i
+          >{{validationRequiredMsg}}
+        </div>
+      </div>
+
+      <!-- Detected Curve (read-only on edit) -->
+      <div class="form-group" ng-show="update && encryptionKey.curve">
+        <label>Detected Curve</label>
+        <input
+          class="form-control"
+          type="text"
+          ng-readonly="true"
+          ng-model="encryptionKey.curve"
+        />
+        <small class="help-block"
+          >This curve was detected from the provided keys and stored with the encryption key.</small
+        >
+      </div>
+
+      <div class="form-group-2columns">
+        <div class="form-group" style="float: left">
+          <label>GovESB Client ID</label>
+          <input
+            class="form-control"
+            type="text"
+            ng-model="encryptionKey.govesbClientId"
+            placeholder="OAuth Client ID"
+          />
+          <small class="help-block"
+            >OAuth Client ID for GovESB authentication</small
+          >
+        </div>
+        <div class="form-group" style="float: left; margin-left: 20px">
+          <label>GovESB Client Secret</label>
+          <input
+            class="form-control"
+            type="password"
+            ng-model="encryptionKey.govesbClientSecret"
+            placeholder="OAuth Client Secret"
+          />
+          <small class="help-block"
+            >OAuth Client Secret for GovESB authentication</small
+          >
+        </div>
+      </div>
+
+      <h5 style="font-style: italic">GovESB Endpoints</h5>
+      <div class="form-group">
+        <label><span>*</span> Access Token URL</label>
+        <input
+          class="form-control"
+          type="text"
+          ng-model="encryptionKey.accessTokenUrl"
+          placeholder="https://.../govesb-uaa/oauth/token"
+        />
+        <small class="help-block">OAuth2 token endpoint for GovESB</small>
+      </div>
+      <div class="form-group-2columns">
+        <div class="form-group" style="float: left">
+          <label><span>*</span> Push Request URL</label>
+          <input
+            class="form-control"
+            type="text"
+            ng-model="encryptionKey.pushRequestUrl"
+            placeholder="https://.../engine/esb/push-request"
+          />
+        </div>
+        <div class="form-group" style="float: left; margin-left: 20px">
+          <label><span>*</span> Response Request URL</label>
+          <input
+            class="form-control"
+            type="text"
+            ng-model="encryptionKey.responseRequestUrl"
+            placeholder="https://.../engine/esb/request"
+          />
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Async Request URL</label>
+        <input
+          class="form-control"
+          type="text"
+          ng-model="encryptionKey.asyncRequestUrl"
+          placeholder="https://.../engine/esb/async"
+        />
+      </div>
+      <div class="form-group">
+        <label>GovESB NIDA User ID (Optional)</label>
+        <input
+          class="form-control"
+          type="text"
+          ng-model="encryptionKey.govesbNidaUserId"
+          placeholder="NIDA User ID"
+        />
+      </div>
+
+      <div class="form-group">
+        <label>Algorithm Information</label>
+        <div class="well well-sm" style="margin-bottom: 0">
+          <strong>Signing/Verification:</strong> ECDSA-P256-SHA256<br />
+          <strong>Encryption/Decryption:</strong>
+          ECDH-P256-HKDF-SHA256-AES-256-GCM<br />
+          <small class="text-muted"
+            >These algorithms are fixed by GovESB and are used
+            automatically.</small
+          >
+        </div>
+      </div>
+    </fieldset>
+  </div>
+  <div class="modal-footer">
+    <!-- hasErrors Alerts -->
+    <div
+      uib-alert
+      style="width: 50%; float: left; text-align: left; margin: 0; padding: 5px"
+      ng-repeat="alert in alerts.hasErrors"
+      ng-class="'alert-' + (alert.type || 'warning')"
+    >
+      <i class="glyphicon glyphicon-warning-sign"></i>{{alert.msg}}
+    </div>
+    <!-- hasErrors Alerts -->
+
+    <div>
+      <button type="button" class="btn btn-default" ng-click="cancel()">
+        Close
+      </button>
+      <button
+        type="button"
+        class="btn btn-primary"
+        ng-click="submitFormEncryptionKeys()"
+      >
+        Save changes
+      </button>
+    </div>
+  </div>
+</form>

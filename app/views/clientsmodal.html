@@ -1,0 +1,82 @@
+<div class="modal-header">
+  <button type="button" class="close" ng-click="cancel()" aria-hidden="true">
+    &times;
+  </button>
+  <h4 class="modal-title" id="addClientLabel">
+    <i class="glyphicon glyphicon-th"></i>&nbsp;&nbsp;
+    <span ng-show="update">Edit</span>
+    <span ng-show="!update">Add</span>
+    a client
+  </h4>
+</div>
+
+<div class="modal-body">
+  <div class="form-group has-error-key">
+    <span>*</span> Indicates a required field<br />
+    <span>*</span><span>*</span> Indicates that at least one of the fields is
+    required
+  </div>
+
+  <fieldset>
+    <uib-tabset justified="true">
+      <!-- ************* TAB FOR CLIENT BASIC INFO ************** -->
+      <uib-tab
+        class="{{ngError.clientBasicInfoTab === true ? 'has-error-tab' : ''}}"
+        active="selectedTab.basicInfo"
+      >
+        <uib-tab-heading
+          ><i
+            class="glyphicon glyphicon-warning-sign"
+            style="display: none;"
+          ></i>
+          Basic Info
+        </uib-tab-heading>
+        <h3>Basic Info</h3>
+        <div ng-include="'views/partials/clients-tab-basic-info.html'"></div>
+      </uib-tab>
+
+      <!-- ************* TAB FOR Client Authentication ************** -->
+      <uib-tab
+        class="{{ngError.clientAuthenticationTab === true ? 'has-error-tab' : ''}}"
+        active="selectedTab.authentication"
+      >
+        <uib-tab-heading
+          ><i
+            class="glyphicon glyphicon-warning-sign"
+            style="display: none;"
+          ></i>
+          Authentication
+        </uib-tab-heading>
+        <div
+          ng-include="'views/partials/clients-tab-authentication.html'"
+        ></div>
+      </uib-tab>
+    </uib-tabset>
+  </fieldset>
+</div>
+
+<div class="modal-footer">
+  <!-- hasErrors Alerts -->
+  <div
+    uib-alert
+    style="width: 50%; float: left; text-align: left; margin: 0; padding: 5px;"
+    ng-repeat="alert in alerts.hasErrors"
+    ng-class="'alert-' + (alert.type || 'warning')"
+  >
+    <i class="glyphicon glyphicon-warning-sign"></i>{{alert.msg}}
+  </div>
+  <!-- hasErrors Alerts -->
+
+  <div>
+    <button type="button" class="btn btn-default" ng-click="cancel()">
+      Close
+    </button>
+    <button
+      type="button"
+      class="btn btn-primary"
+      ng-click="submitFormClients()"
+    >
+      Save changes
+    </button>
+  </div>
+</div>
