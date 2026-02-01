@@ -2,7 +2,7 @@
   "version": "1.18.2",
   "minimumCoreVersion": "5.0.0",
   "protocol": "https",
-  "host": "localhost",
+  "host": "172.32.2.67",
   "hostPath": "",
   "port": 17070,
   "title": "Faru Gateway",
